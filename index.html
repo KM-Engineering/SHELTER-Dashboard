@@ -254,8 +254,7 @@
           let historyChart = null;
 
            function updateData() {
-            // Replace with your ESP32's IP address
-            const esp32IP = "http://<ESP32_IP>/data"; // Update this line
+            const esp32IP = "192.168.120.106"; // Update this line
 
             fetch(esp32IP)
                 .then(response => response.json())
