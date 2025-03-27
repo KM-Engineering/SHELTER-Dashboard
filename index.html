@@ -499,12 +499,12 @@
                 state.lastUpdateTime = new Date();
                 
                 // Update all cards
-                updateCard('airTemp', data.airTemp, 50, data.timestamp);
-                updateCard('airRH', data.airRH, 100, data.timestamp);
-                updateCard('soilRH1', data.soilRH1, 100, data.timestamp);
-                updateCard('soilRH2', data.soilRH2, 100, data.timestamp);
-                updateCard('soilRH3', data.soilRH3, 100, data.timestamp);
-                updateCard('soilRH4', data.soilRH4, 100, data.timestamp);
+                updateCard('airTemp', data.airTemp, 50);
+                updateCard('airRH', data.airRH, 100);
+                updateCard('soilRH1', data.soilRH1, 100);
+                updateCard('soilRH2', data.soilRH2, 100);
+                updateCard('soilRH3', data.soilRH3, 100);
+                updateCard('soilRH4', data.soilRH4, 100);
                 
                 // Update last updated time
                 document.getElementById('lastUpdated').innerText = state.lastUpdateTime.toLocaleString();
@@ -611,7 +611,6 @@
             const ctx = document.getElementById('historyChart');
             
             if (!state.historyChart) {
-                // Create new chart
                 state.historyChart = new Chart(ctx, {
                     type: 'line',
                     data: {
