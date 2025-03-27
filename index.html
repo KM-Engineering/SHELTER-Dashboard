@@ -460,36 +460,38 @@
     </footer>
 
     <script>
-        // Configuration
+
+        
+        /////////////////////////////////////// Configuration
         const config = {
-            dataUrl: 'https://raw.githubusercontent.com/KM-Engineering/SHELTER-Dashboard/main/testdata.json', // Update with your GitHub repo path
-            updateInterval: 5000, // 30 seconds
+            dataUrl: 'https://raw.githubusercontent.com/KM-Engineering/SHELTER-Dashboard/main/testdata.json',
+            updateInterval: 5000,
             thresholds: {
                 airTemp: { min: 18, max: 28, criticalMin: 10, criticalMax: 35 },
                 airRH: { min: 40, max: 70, criticalMin: 20, criticalMax: 85 },
                 soilRH: { min: 30, max: 70, criticalMin: 15, criticalMax: 85 }
             }
         };
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         let sensorData = {};
         let liveUpdateInterval = null;
         let historyChart = null;
         let lastUpdateTime = null;
+        let currentChartType = null;
 
         document.addEventListener('DOMContentLoaded', function() {
             updateData();
             setInterval(updateData, config.updateInterval);
             
-            // AUTO SWITCHES DARK MODE WOHOOOOOOOO
+            // Auto switch to dark mode if preferred
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                 document.body.classList.add('dark-mode');
             }
         });
 
-
         async function updateData() {
             try {
-
                 const url = `${config.dataUrl}?t=${new Date().getTime()}`;
                 const response = await fetch(url);
                 
@@ -510,10 +512,8 @@
                 
                 document.getElementById('lastUpdated').innerText = lastUpdateTime.toLocaleString();
                 
-                if (document.getElementById('historyModal').style.display === 'block') {
-                    const type = document.getElementById('modalTitle').innerText.replace(' History', '');
-                    const title = document.getElementById('modalTitle').innerText;
-                    updateChart(type, title);
+                if (document.getElementById('historyModal').style.display === 'block' && currentChartType) {
+                    updateChart(currentChartType, document.getElementById('modalTitle').innerText.replace(' History', ''));
                 }
                 
             } catch (error) {
@@ -522,24 +522,20 @@
             }
         }
 
-        // Update individual card
         function updateCard(type, value, max, timestamp) {
             const card = document.querySelector(`.card[onclick*="${type}"]`);
             const progressBar = card.querySelector('.progress');
             const valueElement = card.querySelector('.value span');
             const timeElement = card.querySelector('.timestamp');
             
-            // Update values
             valueElement.innerText = value !== undefined ? value.toFixed(1) : '--';
             progressBar.style.width = value !== undefined ? `${(value / max) * 100}%` : '0%';
             
-            // Update timestamp if available
             if (timestamp) {
                 const time = new Date(timestamp);
                 timeElement.innerText = time.toLocaleTimeString();
             }
             
-            // Update status indicator based on thresholds
             card.classList.remove('warning', 'critical');
             
             if (value !== undefined) {
@@ -548,7 +544,7 @@
                     thresholds = config.thresholds.airTemp;
                 } else if (type.startsWith('soilRH')) {
                     thresholds = config.thresholds.soilRH;
-                } else { // airRH
+                } else {
                     thresholds = config.thresholds.airRH;
                 }
                 
@@ -560,32 +556,28 @@
             }
         }
 
-        // Show history chart modal
         function showHistory(type, title) {
+            currentChartType = type;
             document.getElementById('modalTitle').innerText = `${title} History`;
             document.getElementById('historyModal').style.display = 'block';
             
-            // Update time range info
             if (lastUpdateTime) {
                 document.getElementById('chartTimeRange').innerText = `Last 24 hours - Updated ${lastUpdateTime.toLocaleTimeString()}`;
             }
             
             updateChart(type, title);
             
-            // Set up live updates for the chart
             if (liveUpdateInterval) {
                 clearInterval(liveUpdateInterval);
             }
             liveUpdateInterval = setInterval(() => updateChart(type, title), config.updateInterval);
         }
 
-        // Update the history chart
         function updateChart(type, title) {
             const historyKey = `${type}History`;
             const history = sensorData[historyKey] || [];
             const timestamps = sensorData.timestamps || [];
             
-            // Format timestamps for display
             const formattedTimestamps = timestamps.map(t => {
                 const date = new Date(t);
                 return date.toLocaleTimeString();
@@ -593,17 +585,15 @@
             
             const ctx = document.getElementById('historyChart').getContext('2d');
             
-            // Determine chart color based on current value
-            let borderColor = '#4CAF50'; // green - normal
+            let borderColor = '#4CAF50';
             const card = document.querySelector(`.card[onclick*="${type}"]`);
             if (card.classList.contains('warning')) {
-                borderColor = '#FFC107'; // yellow - warning
+                borderColor = '#FFC107';
             } else if (card.classList.contains('critical')) {
-                borderColor = '#F44336'; // red - critical
+                borderColor = '#F44336';
             }
             
             if (!historyChart) {
-                // Create new chart
                 historyChart = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -670,7 +660,7 @@
                     }
                 });
             } else {
-                // Update existing chart
+                // HOW DID I NOT REALIZE I COULD JUST DO THIS INSTEAD OF DESTROYING AND RECREATING THE CHART OH MY GOD I HATE PYTHON
                 historyChart.data.labels = formattedTimestamps;
                 historyChart.data.datasets[0].data = history;
                 historyChart.data.datasets[0].label = title;
@@ -681,30 +671,30 @@
             }
         }
 
-        // Close modal
         function closeModal() {
             document.getElementById('historyModal').style.display = 'none';
             if (liveUpdateInterval) {
                 clearInterval(liveUpdateInterval);
                 liveUpdateInterval = null;
             }
+            currentChartType = null;
         }
 
-        // Close modal when clicking outside
         function closeModalOnOutsideClick(event) {
             if (event.target === document.getElementById('historyModal')) {
                 closeModal();
             }
         }
 
-        // Toggle dark mode
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
-            // Save preference to localStorage
             localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+            
+            if (document.getElementById('historyModal').style.display === 'block' && currentChartType) {
+                updateChart(currentChartType, document.getElementById('modalTitle').innerText.replace(' History', ''));
+            }
         }
 
-        // Check for saved dark mode preference
         if (localStorage.getItem('darkMode') === 'true') {
             document.body.classList.add('dark-mode');
         }
