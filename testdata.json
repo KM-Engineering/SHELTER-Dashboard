@@ -1,0 +1,13 @@
+{
+  "airTemp": 22.5,
+  "airRH": 45,
+  "soilRH1": 60,
+  "soilRH2": 55,
+  "soilRH3": 65,
+  "soilRH4": 70,
+  "timestamp": "2023-06-15T14:30:00Z",
+  "airTempHistory": [22, 22.5, 23, ...],
+  "airRHHistory": [45, 46, 44, ...],
+  "soilRH1History": [60, 59, 61, ...],
+  "timestamps": ["2023-06-15T13:30:00Z", "2023-06-15T13:45:00Z", ...]
+}
