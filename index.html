@@ -333,7 +333,7 @@
     
     <div class="container">
         <h1>The SHELTER Project</h1>
-        <p class="subtitle">Environmental Monitoring Dashboard</p>
+        <p class="subtitle">Sustainable Habitat for Endangered Landflora, Targeting Environmental Regrowth</p>
         
         <div class="card" onclick="showHistory('airTemp', 'Air Temperature')">
             <div class="status-indicator"></div>
@@ -471,27 +471,25 @@
             }
         };
 
-        // Global variables
         let sensorData = {};
         let liveUpdateInterval = null;
         let historyChart = null;
         let lastUpdateTime = null;
 
-        // Initialize the dashboard
         document.addEventListener('DOMContentLoaded', function() {
             updateData();
             setInterval(updateData, config.updateInterval);
             
-            // Check for dark mode preference
+            // AUTO SWITCHES DARK MODE WOHOOOOOOOO
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                 document.body.classList.add('dark-mode');
             }
         });
 
-        // Fetch data from GitHub repository
+
         async function updateData() {
             try {
-                // Add cache busting parameter to avoid cached responses
+
                 const url = `${config.dataUrl}?t=${new Date().getTime()}`;
                 const response = await fetch(url);
                 
@@ -503,7 +501,6 @@
                 sensorData = data;
                 lastUpdateTime = new Date();
                 
-                // Update all cards
                 updateCard('airTemp', data.airTemp, 50, data.timestamp);
                 updateCard('airRH', data.airRH, 100, data.timestamp);
                 updateCard('soilRH1', data.soilRH1, 100, data.timestamp);
@@ -511,10 +508,8 @@
                 updateCard('soilRH3', data.soilRH3, 100, data.timestamp);
                 updateCard('soilRH4', data.soilRH4, 100, data.timestamp);
                 
-                // Update last updated time
                 document.getElementById('lastUpdated').innerText = lastUpdateTime.toLocaleString();
                 
-                // If modal is open, update the chart
                 if (document.getElementById('historyModal').style.display === 'block') {
                     const type = document.getElementById('modalTitle').innerText.replace(' History', '');
                     const title = document.getElementById('modalTitle').innerText;
