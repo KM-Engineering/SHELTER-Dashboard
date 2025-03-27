@@ -460,26 +460,28 @@
     </footer>
 
     <script>
-
-        
-        /////////////////////////////////////// Configuration
+        // Configuration
         const config = {
             dataUrl: 'https://raw.githubusercontent.com/KM-Engineering/SHELTER-Dashboard/main/testdata.json',
-            updateInterval: 5000,
+            updateInterval: 5000, // 5 seconds
             thresholds: {
                 airTemp: { min: 18, max: 28, criticalMin: 10, criticalMax: 35 },
                 airRH: { min: 40, max: 70, criticalMin: 20, criticalMax: 85 },
                 soilRH: { min: 30, max: 70, criticalMin: 15, criticalMax: 85 }
             }
         };
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        let sensorData = {};
-        let liveUpdateInterval = null;
-        let historyChart = null;
-        let lastUpdateTime = null;
-        let currentChartType = null;
+        // State management
+        const state = {
+            sensorData: {},
+            liveUpdateInterval: null,
+            historyChart: null,
+            lastUpdateTime: null,
+            currentChartType: null,
+            isModalOpen: false
+        };
 
+        // Initialize on DOM load
         document.addEventListener('DOMContentLoaded', function() {
             updateData();
             setInterval(updateData, config.updateInterval);
@@ -490,19 +492,19 @@
             }
         });
 
+        // Main data update function
         async function updateData() {
             try {
                 const url = `${config.dataUrl}?t=${new Date().getTime()}`;
                 const response = await fetch(url);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
                 const data = await response.json();
-                sensorData = data;
-                lastUpdateTime = new Date();
+                state.sensorData = data;
+                state.lastUpdateTime = new Date();
                 
+                // Update all cards
                 updateCard('airTemp', data.airTemp, 50, data.timestamp);
                 updateCard('airRH', data.airRH, 100, data.timestamp);
                 updateCard('soilRH1', data.soilRH1, 100, data.timestamp);
@@ -510,10 +512,15 @@
                 updateCard('soilRH3', data.soilRH3, 100, data.timestamp);
                 updateCard('soilRH4', data.soilRH4, 100, data.timestamp);
                 
-                document.getElementById('lastUpdated').innerText = lastUpdateTime.toLocaleString();
+                // Update last updated time
+                document.getElementById('lastUpdated').innerText = state.lastUpdateTime.toLocaleString();
                 
-                if (document.getElementById('historyModal').style.display === 'block' && currentChartType) {
-                    updateChart(currentChartType, document.getElementById('modalTitle').innerText.replace(' History', ''));
+                // Update chart if modal is open
+                if (state.isModalOpen && state.currentChartType) {
+                    const title = document.getElementById('modalTitle').innerText.replace(' History', '');
+                    updateChart(state.currentChartType, title);
+                    document.getElementById('chartTimeRange').innerText = 
+                        `Last 24 hours - Updated ${state.lastUpdateTime.toLocaleTimeString()}`;
                 }
                 
             } catch (error) {
@@ -522,79 +529,96 @@
             }
         }
 
+        // Update individual card
         function updateCard(type, value, max, timestamp) {
             const card = document.querySelector(`.card[onclick*="${type}"]`);
+            if (!card) return;
+            
             const progressBar = card.querySelector('.progress');
             const valueElement = card.querySelector('.value span');
             const timeElement = card.querySelector('.timestamp');
             
+            // Update values
             valueElement.innerText = value !== undefined ? value.toFixed(1) : '--';
             progressBar.style.width = value !== undefined ? `${(value / max) * 100}%` : '0%';
             
+            // Update timestamp
             if (timestamp) {
                 const time = new Date(timestamp);
                 timeElement.innerText = time.toLocaleTimeString();
             }
             
+            // Update status indicator
+            updateCardStatus(card, type, value);
+        }
+
+        // Update card status (normal/warning/critical)
+        function updateCardStatus(card, type, value) {
+            if (value === undefined) return;
+            
             card.classList.remove('warning', 'critical');
             
-            if (value !== undefined) {
-                let thresholds;
-                if (type === 'airTemp') {
-                    thresholds = config.thresholds.airTemp;
-                } else if (type.startsWith('soilRH')) {
-                    thresholds = config.thresholds.soilRH;
-                } else {
-                    thresholds = config.thresholds.airRH;
-                }
-                
-                if (value < thresholds.criticalMin || value > thresholds.criticalMax) {
-                    card.classList.add('critical');
-                } else if (value < thresholds.min || value > thresholds.max) {
-                    card.classList.add('warning');
-                }
+            let thresholds;
+            if (type === 'airTemp') thresholds = config.thresholds.airTemp;
+            else if (type.startsWith('soilRH')) thresholds = config.thresholds.soilRH;
+            else thresholds = config.thresholds.airRH;
+            
+            if (value < thresholds.criticalMin || value > thresholds.criticalMax) {
+                card.classList.add('critical');
+            } else if (value < thresholds.min || value > thresholds.max) {
+                card.classList.add('warning');
             }
         }
 
+        // Show history modal
         function showHistory(type, title) {
-            currentChartType = type;
+            state.currentChartType = type;
+            state.isModalOpen = true;
+            
             document.getElementById('modalTitle').innerText = `${title} History`;
             document.getElementById('historyModal').style.display = 'block';
             
-            if (lastUpdateTime) {
-                document.getElementById('chartTimeRange').innerText = `Last 24 hours - Updated ${lastUpdateTime.toLocaleTimeString()}`;
+            // Clear any existing interval
+            if (state.liveUpdateInterval) {
+                clearInterval(state.liveUpdateInterval);
             }
             
+            // Initial chart render
             updateChart(type, title);
             
-            if (liveUpdateInterval) {
-                clearInterval(liveUpdateInterval);
-            }
-            liveUpdateInterval = setInterval(() => updateChart(type, title), config.updateInterval);
+            // Set up live updates
+            state.liveUpdateInterval = setInterval(() => {
+                if (state.sensorData[`${type}History`]) {
+                    updateChart(type, title);
+                    if (state.lastUpdateTime) {
+                        document.getElementById('chartTimeRange').innerText = 
+                            `Last 24 hours - Updated ${state.lastUpdateTime.toLocaleTimeString()}`;
+                    }
+                }
+            }, config.updateInterval);
         }
 
+        // Update or create chart
         function updateChart(type, title) {
             const historyKey = `${type}History`;
-            const history = sensorData[historyKey] || [];
-            const timestamps = sensorData.timestamps || [];
+            const history = state.sensorData[historyKey] || [];
+            const timestamps = state.sensorData.timestamps || [];
             
-            const formattedTimestamps = timestamps.map(t => {
-                const date = new Date(t);
-                return date.toLocaleTimeString();
-            });
+            const formattedTimestamps = timestamps.map(t => new Date(t).toLocaleTimeString());
             
-            const ctx = document.getElementById('historyChart').getContext('2d');
-            
-            let borderColor = '#4CAF50';
+            // Get border color based on current status
+            let borderColor = '#4CAF50'; // Default green
             const card = document.querySelector(`.card[onclick*="${type}"]`);
-            if (card.classList.contains('warning')) {
-                borderColor = '#FFC107';
-            } else if (card.classList.contains('critical')) {
-                borderColor = '#F44336';
+            if (card) {
+                if (card.classList.contains('warning')) borderColor = '#FFC107';
+                if (card.classList.contains('critical')) borderColor = '#F44336';
             }
             
-            if (!historyChart) {
-                historyChart = new Chart(ctx, {
+            const ctx = document.getElementById('historyChart');
+            
+            if (!state.historyChart) {
+                // Create new chart
+                state.historyChart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: formattedTimestamps,
@@ -613,71 +637,77 @@
                             tension: 0.1
                         }]
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: {
-                            duration: 500,
-                            easing: 'easeOutQuart',
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            },
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false,
-                                callbacks: {
-                                    label: function(context) {
-                                        return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}${type === 'airTemp' ? '°C' : '%'}`;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Time'
-                                },
-                                grid: {
-                                    display: false
-                                }
-                            },
-                            y: {
-                                title: {
-                                    display: true,
-                                    text: type === 'airTemp' ? 'Temperature (°C)' : 'Humidity (%)'
-                                },
-                                min: type === 'airTemp' ? 0 : 0,
-                                max: type === 'airTemp' ? 50 : 100
-                            }
-                        },
-                        interaction: {
-                            mode: 'nearest',
-                            intersect: false
-                        }
-                    }
+                    options: getChartOptions(type)
                 });
             } else {
-                // HOW DID I NOT REALIZE I COULD JUST DO THIS INSTEAD OF DESTROYING AND RECREATING THE CHART OH MY GOD I HATE PYTHON
-                historyChart.data.labels = formattedTimestamps;
-                historyChart.data.datasets[0].data = history;
-                historyChart.data.datasets[0].label = title;
-                historyChart.data.datasets[0].borderColor = borderColor;
-                historyChart.data.datasets[0].backgroundColor = `${borderColor}20`;
-                historyChart.data.datasets[0].pointBackgroundColor = borderColor;
-                historyChart.update();
+
+                state.historyChart.data.labels = formattedTimestamps;
+                state.historyChart.data.datasets[0].data = history;
+                state.historyChart.data.datasets[0].label = title;
+                state.historyChart.data.datasets[0].borderColor = borderColor;
+                state.historyChart.data.datasets[0].backgroundColor = `${borderColor}20`;
+                state.historyChart.data.datasets[0].pointBackgroundColor = borderColor;
+                state.historyChart.update();
             }
+        }
+
+        function getChartOptions(type) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 500,
+                    easing: 'easeOutQuart',
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}${type === 'airTemp' ? '°C' : '%'}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: type === 'airTemp' ? 'Temperature (°C)' : 'Humidity (%)'
+                        },
+                        min: type === 'airTemp' ? 0 : 0,
+                        max: type === 'airTemp' ? 100 : 100
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    intersect: false
+                }
+            };
         }
 
         function closeModal() {
             document.getElementById('historyModal').style.display = 'none';
-            if (liveUpdateInterval) {
-                clearInterval(liveUpdateInterval);
-                liveUpdateInterval = null;
+            state.isModalOpen = false;
+            
+            if (state.liveUpdateInterval) {
+                clearInterval(state.liveUpdateInterval);
+                state.liveUpdateInterval = null;
             }
-            currentChartType = null;
+            state.currentChartType = null;
         }
 
         function closeModalOnOutsideClick(event) {
@@ -686,12 +716,14 @@
             }
         }
 
+
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
             localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
             
-            if (document.getElementById('historyModal').style.display === 'block' && currentChartType) {
-                updateChart(currentChartType, document.getElementById('modalTitle').innerText.replace(' History', ''));
+
+            if (state.isModalOpen && state.currentChartType) {
+                updateChart(state.currentChartType, document.getElementById('modalTitle').innerText.replace(' History', ''));
             }
         }
 
