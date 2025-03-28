@@ -1,1 +1,30 @@
-lalalala test code
+{
+  "airTemp": 26.1,
+  "airRH": 66.3,
+  "soilRH1": 56.3,
+  "soilRH2": 42.8,
+  "soilRH3": 63.8,
+  "soilRH4": 43.9,
+  "timestamp": "2025-03-28T05:31:08.563199Z",
+  "airTempHistory": [
+    26.1
+  ],
+  "airRHHistory": [
+    66.3
+  ],
+  "soilRH1History": [
+    56.3
+  ],
+  "soilRH2History": [
+    42.8
+  ],
+  "soilRH3History": [
+    63.8
+  ],
+  "soilRH4History": [
+    43.9
+  ],
+  "timestamps": [
+    "2025-03-28T05:31:08.563199Z"
+  ]
+}
