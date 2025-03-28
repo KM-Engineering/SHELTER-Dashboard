@@ -1,0 +1,30 @@
+{
+  "airTemp": 25.4,
+  "airRH": 69.4,
+  "soilRH1": 43.8,
+  "soilRH2": 45.5,
+  "soilRH3": 65.4,
+  "soilRH4": 43.6,
+  "timestamp": "2025-03-28T05:14:27.956535Z",
+  "airTempHistory": [
+    25.4
+  ],
+  "airRHHistory": [
+    69.4
+  ],
+  "soilRH1History": [
+    43.8
+  ],
+  "soilRH2History": [
+    45.5
+  ],
+  "soilRH3History": [
+    65.4
+  ],
+  "soilRH4History": [
+    43.6
+  ],
+  "timestamps": [
+    "2025-03-28T05:14:27.956535Z"
+  ]
+}
