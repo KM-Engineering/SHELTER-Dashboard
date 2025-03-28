@@ -1,30 +1,37 @@
 {
-  "airTemp": 30.4,
-  "airRH": 69.4,
-  "soilRH1": 57.2,
-  "soilRH2": 60.8,
-  "soilRH3": 48.5,
-  "soilRH4": 46.3,
-  "timestamp": "2025-03-28T04:16:47.288458Z",
+  "airTemp": 30.5,
+  "airRH": 70.9,
+  "soilRH1": 58.3,
+  "soilRH2": 62.3,
+  "soilRH3": 49.8,
+  "soilRH4": 47.2,
+  "timestamp": "2025-03-28T04:17:48.398628Z",
   "airTempHistory": [
-    30.4
+    30.4,
+    30.5
   ],
   "airRHHistory": [
-    69.4
+    69.4,
+    70.9
   ],
   "soilRH1History": [
-    57.2
+    57.2,
+    58.3
   ],
   "soilRH2History": [
-    60.8
+    60.8,
+    62.3
   ],
   "soilRH3History": [
-    48.5
+    48.5,
+    49.8
   ],
   "soilRH4History": [
-    46.3
+    46.3,
+    47.2
   ],
   "timestamps": [
-    "2025-03-28T04:16:47.288458Z"
+    "2025-03-28T04:16:47.288458Z",
+    "2025-03-28T04:17:48.398628Z"
   ]
 }
